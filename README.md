@@ -222,8 +222,53 @@ public class NoteSearch extends ListActivity implements SearchView.OnQueryTextLi
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20190517153328569.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2h1YWlxaTgzNzg=,size_16,color_FFFFFF,t_70)
 
-3.拓展功能：UI美化
+3.拓展功能：UI美化（将记事本列表背景设置为白色，将记事本内容背景颜色显示在记事本列表上，并将英文g功能选项改成中文）
 
+代码：
+
+String.xml
+
+ ```
+ <?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <string name="app_name">NotePad</string>
+    <string name="live_folder_name">NotePad</string>
+
+    <string name="title_edit_title">笔记标题:</string>
+    <string name="title_create">新笔记</string>
+    <string name="title_edit">编辑: %1$s</string>
+    <string name="title_notes_list">NotePad</string>
+
+    <string name="menu_add">添加记事本</string>
+    <string name="menu_save">保存</string>
+    <string name="menu_delete">删除</string>
+    <string name="menu_open">打开</string>
+    <string name="menu_revert">撤销修改</string>
+    <string name="menu_copy">复制</string>
+    <string name="menu_paste">粘贴</string>
+    <string name="menu_search">搜索</string>
+    <string name="menu_sort">排序</string>
+    <string name="menu_sort1">按创建时间排序</string>
+    <string name="menu_sort2">按修改时间排序</string>
+    <string name="menu_sort3">按颜色排序</string>
+
+    <string name="button_ok">OK</string>
+    <string name="text_title">Title:</string>
+
+    <string name="resolve_edit">编辑笔记</string>
+    <string name="resolve_title">编辑标题</string>
+
+    <string name="error_title">错误</string>
+    <string name="error_message">加载笔记错误</string>
+    <string name="nothing_to_save">没有内容需要保存</string>
+    <string name="title_activity_note_search">笔记搜索</string>
+    <string name="title_activity_output_text">输出笔记</string>
+</resources>
+ ```
+ 
+ 截图：
+ 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20190517153336392.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2h1YWlxaTgzNzg=,size_16,color_FFFFFF,t_70)
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20190517153344596.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2h1YWlxaTgzNzg=,size_16,color_FFFFFF,t_70)
@@ -232,7 +277,285 @@ public class NoteSearch extends ListActivity implements SearchView.OnQueryTextLi
 
 代码：
 
+NotePad.java
+
  ```
+public static final String COLUMN_NAME_BACK_COLOR = "color";
+public static final int DEFAULT_COLOR = 0; //白
+public static final int YELLOW_COLOR = 1; //黄
+public static final int BLUE_COLOR = 2; //蓝
+public static final int GREEN_COLOR = 3; //绿
+public static final int RED_COLOR = 4; //红
+```
+
+NotePadProvider.java：
+
+```
+@Override
+    public void onCreate(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE " + NotePad.Notes.TABLE_NAME + "   ("
+        + NotePad.Notes._ID + " INTEGER PRIMARY KEY,"
+        + NotePad.Notes.COLUMN_NAME_TITLE + " TEXT,"
+        + NotePad.Notes.COLUMN_NAME_NOTE + " TEXT,"
+        + NotePad.Notes.COLUMN_NAME_CREATE_DATE + " INTEGER,"
+        + NotePad.Notes.COLUMN_NAME_MODIFICATION_DATE + " INTEGER,"
+        + NotePad.Notes.COLUMN_NAME_BACK_COLOR + " INTEGER" //颜色
+        + ");");
+       }
+ static{}中
+ sNotesProjectionMap.put(
+        NotePad.Notes.COLUMN_NAME_BACK_COLOR,
+        NotePad.Notes.COLUMN_NAME_BACK_COLOR);
+ insert中
+ if (values.containsKey(NotePad.Notes.COLUMN_NAME_BACK_COLOR) == false) {
+        values.put(NotePad.Notes.COLUMN_NAME_BACK_COLOR, NotePad.Notes.DEFAULT_COLOR);
+        }
+ MyCurcorAdapter:
+ package com.example.android.notepad;
+
+import android.content.Context;
+import android.database.Cursor;
+import android.graphics.Color;
+import android.view.View;
+import android.widget.SimpleCursorAdapter;
+
+public class MyCursorAdapter extends SimpleCursorAdapter {
+    public MyCursorAdapter(Context context, int layout, Cursor c,
+                           String[] from, int[] to) {
+        super(context, layout, c, from, to);
+    }
+    @Override
+    public void bindView(View view, Context context, Cursor cursor){
+        super.bindView(view, context, cursor);
+        //从数据库中读取的cursor中获取笔记列表对应的颜色数据，并设置笔记颜色
+        int x = cursor.getInt(cursor.getColumnIndex(NotePad.Notes.COLUMN_NAME_BACK_COLOR));
+        /**
+         * 白 255 255 255
+         * 黄 247 216 133
+         * 蓝 165 202 237
+         * 绿 161 214 174
+         * 红 244 149 133
+         */
+        switch (x){
+            case NotePad.Notes.DEFAULT_COLOR:
+                view.setBackgroundColor(Color.rgb(255, 255, 255));
+                break;
+            case NotePad.Notes.YELLOW_COLOR:
+                view.setBackgroundColor(Color.rgb(247, 216, 133));
+                break;
+            case NotePad.Notes.BLUE_COLOR:
+                view.setBackgroundColor(Color.rgb(165, 202, 237));
+                break;
+            case NotePad.Notes.GREEN_COLOR:
+                view.setBackgroundColor(Color.rgb(161, 214, 174));
+                break;
+            case NotePad.Notes.RED_COLOR:
+                view.setBackgroundColor(Color.rgb(244, 149, 133));
+                break;
+            default:
+                view.setBackgroundColor(Color.rgb(255, 255, 255));
+                break;
+        }
+    }
+}
+```
+
+Nodelist.java：
+
+```
+private static final String[] PROJECTION = new String[] {
+            NotePad.Notes._ID, // 0
+            NotePad.Notes.COLUMN_NAME_TITLE, // 1
+            //扩展 显示时间 颜色
+            NotePad.Notes.COLUMN_NAME_MODIFICATION_DATE, // 2
+            NotePad.Notes.COLUMN_NAME_BACK_COLOR,
+    };
+adapter = new MyCursorAdapter(
+        this,
+        R.layout.noteslist_item,
+        cursor,
+        dataColumns,
+        viewIDs
+    );
+```
+    
+PROJECTION
+
+```
+private static final String[] PROJECTION =
+        new String[] {
+            NotePad.Notes._ID,
+            NotePad.Notes.COLUMN_NAME_TITLE,
+            NotePad.Notes.COLUMN_NAME_NOTE,
+            NotePad.Notes.COLUMN_NAME_BACK_COLOR
+    };
+```
+    
+NoteEditor.java：
+
+```
+int x = mCursor.getInt(mCursor.getColumnIndex(NotePad.Notes.COLUMN_NAME_BACK_COLOR));
+    /**
+    * 白 255 255 255
+    * 黄 247 216 133
+    * 蓝 165 202 237
+    * 绿 161 214 174
+    * 红 244 149 133
+    */
+    switch (x){
+        case NotePad.Notes.DEFAULT_COLOR:
+            mText.setBackgroundColor(Color.rgb(255, 255, 255));
+            break;
+        case NotePad.Notes.YELLOW_COLOR:
+            mText.setBackgroundColor(Color.rgb(247, 216, 133));
+            break;
+        case NotePad.Notes.BLUE_COLOR:
+            mText.setBackgroundColor(Color.rgb(165, 202, 237));
+            break;
+        case NotePad.Notes.GREEN_COLOR:
+            mText.setBackgroundColor(Color.rgb(161, 214, 174));
+            break;
+        case NotePad.Notes.RED_COLOR:
+            mText.setBackgroundColor(Color.rgb(244, 149, 133));
+            break;
+        default:
+            mText.setBackgroundColor(Color.rgb(255, 255, 255));
+            break;
+    }
+```      
+        
+NoteEditor.java
+
+```
+case R.id.menu_color:
+        changeColor();
+        break;
+  private final void changeColor() {
+        Intent intent = new Intent(null,mUri);
+        intent.setClass(NoteEditor.this,NoteColor.class);
+        NoteEditor.this.startActivity(intent);
+    }
+```
+
+NoteColor.java
+
+```
+public class NoteColor extends Activity {
+    private Cursor mCursor;
+    private Uri mUri;
+    private int color;
+    private static final int COLUMN_INDEX_TITLE = 1;
+    private static final String[] PROJECTION = new String[] {
+            NotePad.Notes._ID, // 0
+            NotePad.Notes.COLUMN_NAME_BACK_COLOR,
+    };
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.note_color);
+        //从NoteEditor传入的uri
+        mUri = getIntent().getData();
+        mCursor = managedQuery(
+                mUri,        // The URI for the note that is to be retrieved.
+                PROJECTION,  // The columns to retrieve
+                null,        // No selection criteria are used, so no where columns are needed.
+                null,        // No where columns are used, so no where values are needed.
+                null         // No sort order is needed.
+        );
+    }
+    @Override
+    protected void onResume(){
+        //执行顺序在onCreate之后
+        if (mCursor != null) {
+            mCursor.moveToFirst();
+            color = mCursor.getInt(COLUMN_INDEX_TITLE);
+        }
+        super.onResume();
+    }
+    @Override
+    protected void onPause() {
+        //执行顺序在finish()之后，将选择的颜色存入数据库
+        super.onPause();
+        ContentValues values = new ContentValues();
+        values.put(NotePad.Notes.COLUMN_NAME_BACK_COLOR, color);
+        getContentResolver().update(mUri, values, null, null);
+    }
+    public void white(View view){
+        color = NotePad.Notes.DEFAULT_COLOR;
+        finish();
+    }
+    public void yellow(View view){
+        color = NotePad.Notes.YELLOW_COLOR;
+        finish();
+    }
+    public void blue(View view){
+        color = NotePad.Notes.BLUE_COLOR;
+        finish();
+    }
+    public void green(View view){
+        color = NotePad.Notes.GREEN_COLOR;
+        finish();
+    }
+    public void red(View view){
+        color = NotePad.Notes.RED_COLOR;
+        finish();
+    }
+
+}
+```
+
+note_color.xml
+
+```
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <ImageButton
+        android:id="@+id/color_white"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_weight="1"
+        android:background="#FFFFFF"
+        android:onClick="white"/>
+    <ImageButton
+        android:id="@+id/color_yellow"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_weight="1"
+        android:background="#EEEE00"
+        android:onClick="yellow"/>
+    <ImageButton
+        android:id="@+id/color_green"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_weight="1"
+        android:background="#00EE00"
+        android:onClick="green"/>
+    <ImageButton
+        android:id="@+id/color_blue"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_weight="1"
+        android:background="#436EEE"
+        android:onClick="blue"/>
+    <ImageButton
+        android:id="@+id/color_red"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_weight="1"
+        android:background="#FF0000"
+        android:onClick="red"/>
+</LinearLayout>
+ ```
+ 
+AndroidManifest.xml
+
+ ```
+<activity
+            android:name=".NoteColor"
+            android:label="ChangeColor"
+            android:theme="@android:style/Theme.Holo.Light.Dialog"
+            android:windowSoftInputMode="stateVisible" />
  ```
  
  截图：
@@ -243,6 +566,13 @@ public class NoteSearch extends ListActivity implements SearchView.OnQueryTextLi
 
 5.拓展功能：记事本导出
 
+代码：
+
+ ```
+ ```
+ 
+ 截图：
+ 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20190517153418102.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2h1YWlxaTgzNzg=,size_16,color_FFFFFF,t_70)
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20190517153424901.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2h1YWlxaTgzNzg=,size_16,color_FFFFFF,t_70)
